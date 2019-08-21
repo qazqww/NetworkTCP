@@ -27,18 +27,25 @@ public class TCPServer : MonoBehaviour
         if (client != null && client.Poll(0, SelectMode.SelectRead))
         {
             byte[] buffer = new byte[1024];
-            int recvLength = client.Receive(buffer); // 사이즈 값을 int 타입으로 리턴
-            if (recvLength == 0) // 클라이언트가 종료된 경우
+
+            try
+            {
+                int recvLength = client.Receive(buffer); // 사이즈 값을 int 타입으로 리턴
+                if (recvLength == 0) // 클라이언트가 종료된 경우
+                {
+                    client = null;
+                    return;
+                }
+                else
+                {
+                    client.Send(buffer);
+                }
+            }
+            catch (Exception ex)
             {
                 client = null;
-                return;
+                Debug.Log(ex);
             }
-            else
-            {
-                client.Send(buffer);
-            }
-
-            Debug.Log(buffer);
         }
     }
 

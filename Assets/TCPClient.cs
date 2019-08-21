@@ -17,6 +17,22 @@ public class TCPClient : MonoBehaviour
 {
     Socket client;
     string sendMsg = string.Empty;
+    string recvStr = string.Empty;
+    string recvMsg = string.Empty;
+
+    private void Update()
+    {
+        if(client != null && client.Poll(0, SelectMode.SelectRead))
+        {
+            byte[] buffer = new byte[1024];
+            int recvLen = client.Receive(buffer);
+            if (recvLen > 0)
+            {
+                recvStr = System.Text.Encoding.UTF8.GetString(buffer);
+                recvMsg = recvStr;
+            }
+        }
+    }
 
     private void OnGUI()
     {
@@ -25,7 +41,8 @@ public class TCPClient : MonoBehaviour
             Connect("127.0.0.1", 80);
         }
 
-        sendMsg = GUI.TextField(new Rect(0, 300, 300, 300), sendMsg);
+        sendMsg = GUI.TextField(new Rect(0, 400, 500, 100), sendMsg);
+        recvMsg = GUI.TextField(new Rect(600, 400, 500, 100), recvMsg);
 
         if (GUI.Button(new Rect(0, 600, 300, 300), "Send"))
         {
