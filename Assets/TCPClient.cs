@@ -18,7 +18,31 @@ public class TCPClient : MonoBehaviour
     Socket client;
     string sendMsg = string.Empty;
     string recvStr = string.Empty;
-    string recvMsg = string.Empty;
+
+    List<string> chatStr = new List<string>();
+    Vector2 scrollPos = Vector2.zero;
+
+    private void Start()
+    {
+        
+        chatStr.Add("안녕");
+        chatStr.Add("안녕하");
+        chatStr.Add("안녕하세");
+        chatStr.Add("안녕하세요");
+        chatStr.Add("안녕");
+        chatStr.Add("안녕하");
+        chatStr.Add("안녕하세");
+        chatStr.Add("안녕하세요");
+        chatStr.Add("안녕");
+        chatStr.Add("안녕하");
+        chatStr.Add("안녕하세");
+        chatStr.Add("안녕하세요");
+        chatStr.Add("안녕");
+        chatStr.Add("안녕하");
+        chatStr.Add("안녕하세");
+        chatStr.Add("안녕하세요");
+        
+    }
 
     private void Update()
     {
@@ -28,21 +52,44 @@ public class TCPClient : MonoBehaviour
             int recvLen = client.Receive(buffer);
             if (recvLen > 0)
             {
-                recvStr = System.Text.Encoding.UTF8.GetString(buffer);
-                recvMsg = recvStr;
+                chatStr.Add(System.Text.Encoding.UTF8.GetString(buffer));
             }
         }
     }
 
     private void OnGUI()
     {
-        if(GUI.Button(new Rect(0, 0, 300, 300), "Connect"))
+        #region 채팅 시스템
+        Vector2 stringSize = GUI.skin.textArea.CalcSize(new GUIContent("안녕"));
+
+        int height = 250;
+        int totalHeight = (int)stringSize.y * chatStr.Count;
+        int area = 0;
+        if (totalHeight >= height)
+        {
+            area = totalHeight - height;
+        }        
+
+        scrollPos = GUI.BeginScrollView(new Rect(0, 100, 300, height), scrollPos, new Rect(0, 0, 280, height + area));
+
+        float contentsHeight = 0;
+        for (int i = 0; i < chatStr.Count; i++)
+        {
+            stringSize = GUI.skin.textArea.CalcSize(new GUIContent(chatStr[i]));
+
+            GUI.TextArea(new Rect(0, contentsHeight, stringSize.x, stringSize.y), chatStr[i]);
+            contentsHeight += stringSize.y;
+        }
+
+        GUI.EndScrollView();
+        #endregion
+
+        if (GUI.Button(new Rect(400, 600, 300, 300), "Connect"))
         {
             Connect("127.0.0.1", 80);
         }
 
         sendMsg = GUI.TextField(new Rect(0, 400, 500, 100), sendMsg);
-        recvMsg = GUI.TextField(new Rect(600, 400, 500, 100), recvMsg);
 
         if (GUI.Button(new Rect(0, 600, 300, 300), "Send"))
         {
@@ -73,14 +120,16 @@ public class TCPClient : MonoBehaviour
             Debug.Log(ex);
             client = null;
         }
-
         return false;
     }
 
     private void OnApplicationQuit()
     {
-        client.Shutdown(SocketShutdown.Both); // 소켓을 종료. 양쪽 다
-        client.Close(); // 연결을 닫음
-        client = null;
+        if (client != null)
+        {
+            client.Shutdown(SocketShutdown.Both); // 소켓을 종료. 양쪽 다
+            client.Close(); // 연결을 닫음
+            client = null;
+        }
     }
 }

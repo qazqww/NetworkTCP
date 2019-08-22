@@ -8,7 +8,8 @@ using UnityEngine;
 public class TCPServer : MonoBehaviour
 {
     Socket server;
-    Socket client; // 클라이언트 소켓 복사본
+    //Socket client; // 클라이언트 소켓 복사본
+    List<Socket> clients = new List<Socket>();
 
     void Start()
     {
@@ -21,30 +22,36 @@ public class TCPServer : MonoBehaviour
         // 대기 시간, 통신모드 (SelectRead: 읽어들일 데이터가 있는지)
         if(server.Poll(0, SelectMode.SelectRead))
         {
-            client = server.Accept();
+            Socket client = server.Accept();
+            clients.Add(client);
         }
 
-        if (client != null && client.Poll(0, SelectMode.SelectRead))
+        for (int i = 0; i < clients.Count; i++)
         {
-            byte[] buffer = new byte[1024];
+            if (clients[i].Poll(0, SelectMode.SelectRead))
+            {
+                byte[] buffer = new byte[1024];
 
-            try
-            {
-                int recvLength = client.Receive(buffer); // 사이즈 값을 int 타입으로 리턴
-                if (recvLength == 0) // 클라이언트가 종료된 경우
+                try
                 {
-                    client = null;
-                    return;
+                    int recvLength = clients[i].Receive(buffer); // 사이즈 값을 int 타입으로 리턴
+                    if (recvLength == 0) // 클라이언트가 종료된 경우
+                    {
+                        clients[i] = null;
+                        clients.Remove(clients[i]);
+                        continue;
+                    }
+                    else
+                    {
+                        for (int j = 0; j < clients.Count; j++)
+                            clients[j].Send(buffer);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    client.Send(buffer);
+                    clients[i] = null;
+                    Debug.Log(ex);
                 }
-            }
-            catch (Exception ex)
-            {
-                client = null;
-                Debug.Log(ex);
             }
         }
     }
@@ -59,17 +66,21 @@ public class TCPServer : MonoBehaviour
         }
         catch (Exception ex)
         {
-
+            Debug.Log(ex);
         }
     }
 
     private void OnApplicationQuit()
     {
-        if(client != null)
+        for (int i = 0; i < clients.Count; i++)
         {
-            client.Shutdown(SocketShutdown.Both);
-            client.Close();
-            client = null;
+            if (clients[i] != null)
+            {
+                clients[i].Shutdown(SocketShutdown.Both);
+                clients[i].Close();
+                clients.Remove(clients[i]);
+                clients[i] = null;
+            }
         }
         if (server != null)
         {
